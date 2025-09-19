@@ -27,6 +27,4 @@ Desenvolver uma aplicação de gerenciamento financeiro, utilizando React Native
 - [ ] Upload de Recibos (salvando-os no Firebase Storage)
 - [ ] Gerenciamento de Estado utilizando Context API
 
----
-
 ## DONE
