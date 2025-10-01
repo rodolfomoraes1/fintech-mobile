@@ -4,6 +4,18 @@
 
 ### Instruções
 
+1. Instalar dependências
+
+   ```bash
+   npm install
+   ```
+
+2. Executar app
+
+   ```bash
+   npx expo start
+   ```
+
 ### Objetivo
 
 Desenvolver uma aplicação de gerenciamento financeiro, utilizando React Native (ou Flutter Mobile). A aplicação deve ser capaz de gerenciar transações financeiras, integrando recursos de navegação, segurança, autenticação e armazenamento em cloud.
