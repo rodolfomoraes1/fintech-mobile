@@ -94,7 +94,6 @@ export default function RegisterScreen() {
       showsVerticalScrollIndicator={false}
     >
       <View className="flex-1 justify-center px-8 py-8">
-        {/* Logo */}
         <Image
           source={require("@/assets/images/logo.png")}
           style={{
@@ -105,9 +104,7 @@ export default function RegisterScreen() {
           }}
         />
 
-        {/* Formulário - COM CAMPOS EMBEDADOS */}
         <View className="space-y-4">
-          {/* Campo Nome */}
           <View>
             <Text className="text-gray-700 mb-2 font-medium">
               Nome Completo
@@ -126,7 +123,6 @@ export default function RegisterScreen() {
             </View>
           </View>
 
-          {/* Campo Email */}
           <View className="mt-2">
             <Text className="text-gray-700 mb-2 font-medium">E-mail</Text>
             <View className="flex-row items-center border border-gray-300 rounded-lg px-4 bg-white">
@@ -145,7 +141,6 @@ export default function RegisterScreen() {
             </View>
           </View>
 
-          {/* Campo Senha */}
           <View className="mt-2">
             <Text className="text-gray-700 mb-2 font-medium">Senha</Text>
             <View className="flex-row items-center border border-gray-300 rounded-lg px-4 bg-white">
@@ -176,7 +171,6 @@ export default function RegisterScreen() {
             </Text>
           </View>
 
-          {/* Campo Confirmar Senha */}
           <View className="mt-2">
             <Text className="text-gray-700 mb-2 font-medium">
               Confirmar Senha
@@ -196,7 +190,6 @@ export default function RegisterScreen() {
             </View>
           </View>
 
-          {/* Botão de Cadastro */}
           <TouchableOpacity
             className={`rounded-lg py-4 mt-6 ${
               isLoading ? "bg-green-400" : "bg-green-500"
@@ -209,7 +202,6 @@ export default function RegisterScreen() {
             </Text>
           </TouchableOpacity>
 
-          {/* Link para Login */}
           <View className="flex-row justify-center mt-4">
             <Text className="text-gray-600">Já tem uma conta? </Text>
             <TouchableOpacity

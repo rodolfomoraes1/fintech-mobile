@@ -11,13 +11,11 @@ export const storageService = {
       const response = await fetch(uri);
       const blob = await response.blob();
 
-      // Criar referência única para o arquivo
       const fileRef = ref(
         storage,
         `receipts/${userId}/${invoiceId}/${Date.now()}`
       );
 
-      // Upload do arquivo
       const uploadTask = uploadBytesResumable(fileRef, blob);
 
       return new Promise((resolve, reject) => {
@@ -26,10 +24,8 @@ export const storageService = {
           (snapshot) => {
             const progress =
               (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-            console.log("Upload is " + progress + "% done");
           },
           (error) => {
-            console.error("Upload error:", error);
             resolve({ url: null, error: error.message });
           },
           async () => {
@@ -43,7 +39,6 @@ export const storageService = {
         );
       });
     } catch (error: any) {
-      console.error("Error uploading receipt:", error);
       return { url: null, error: error.message };
     }
   },

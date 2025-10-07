@@ -4,6 +4,7 @@ import {
   signOut,
   updateProfile,
 } from "firebase/auth";
+import { Alert } from "react-native";
 import { auth } from "../lib/firebase";
 import { balanceService } from "./balanceService";
 import { AuthErrorService } from "./errorService";
@@ -75,20 +76,12 @@ class AuthService {
       () => createUserWithEmailAndPassword(auth, email, password),
       name
     ).then(async (result) => {
-      console.log("🔍 SignUp result before balance creation:", result);
-
-      // ✅ CRIAR SALDO INICIAL PARA NOVO USUÁRIO
       if (result.user && !result.error) {
-        console.log("💰 Creating balance for user ID:", result.user.id);
         const balanceResult = await balanceService.createInitialBalance(
           result.user.id
         );
-        console.log("💰 Balance creation result:", balanceResult);
       } else {
-        console.log(
-          "❌ Cannot create balance - no user or error:",
-          result.error
-        );
+        Alert.alert("Erro", "Não foi possível criar o saldo inicial");
       }
 
       return result;

@@ -1,3 +1,6 @@
+import { TransactionHeader } from "@/components/transactions/TransactionHeader";
+import { TransactionItem } from "@/components/transactions/TransactionItem";
+import { TransactionStats } from "@/components/transactions/TransactionStats";
 import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
@@ -32,8 +35,7 @@ export default function TransactionsScreen() {
     });
   };
 
-  // ✅ FUNÇÃO REAL DE EXCLUSÃO
-  const handleDeleteTransaction = (invoice: any) => {
+  const handleDeleteTransaction = async (invoice: any) => {
     Alert.alert(
       "Excluir Transação",
       `Tem certeza que deseja excluir a transação "${invoice.receiver_name}" no valor de ${formatCurrency(invoice.amount)}?`,
@@ -115,50 +117,15 @@ export default function TransactionsScreen() {
 
   return (
     <View className="flex-1 bg-bgColors-paleGreen">
-      {/* Header */}
-      <View className="bg-dark pt-12 pb-4 px-6">
-        <View className="flex-row justify-between items-center">
-          <View>
-            <Text className="text-white text-2xl font-bold">Transações</Text>
-            <Text className="text-light text-sm mt-1">
-              Gerencie suas transações financeiras
-            </Text>
-          </View>
+      <TransactionHeader onCreateTransaction={handleCreateTransaction} />
 
-          <TouchableOpacity
-            className="bg-primary rounded-full p-3 shadow-lg"
-            onPress={handleCreateTransaction}
-          >
-            <Ionicons name="add" size={24} color="#FFFFFF" />
-          </TouchableOpacity>
-        </View>
-      </View>
-
-      {/* Conteúdo */}
       <ScrollView className="flex-1 px-6 pt-6">
-        {/* Estatísticas Rápidas */}
-        <View className="bg-white rounded-xl p-4 mb-6 shadow-sm">
-          <View className="flex-row justify-between items-center">
-            <View>
-              <Text className="text-gray-500 text-sm">Total de Transações</Text>
-              <Text className="text-2xl font-bold text-gray-800">
-                {invoices.length}
-              </Text>
-            </View>
-            <TouchableOpacity
-              className="flex-row items-center bg-primary/10 px-3 py-2 rounded-lg"
-              onPress={handleRefresh}
-              disabled={refreshing}
-            >
-              <Ionicons name="refresh" size={16} color="#47A138" />
-              <Text className="text-primary font-medium ml-2">
-                {refreshing ? "Atualizando..." : "Atualizar"}
-              </Text>
-            </TouchableOpacity>
-          </View>
-        </View>
+        <TransactionStats
+          total={invoices.length}
+          onRefresh={handleRefresh}
+          isRefreshing={refreshing}
+        />
 
-        {/* Lista de Transações */}
         {isLoading ? (
           <View className="items-center py-12">
             <ActivityIndicator size="large" color="#47A138" />
@@ -198,79 +165,13 @@ export default function TransactionsScreen() {
         ) : (
           <View className="space-y-3">
             {invoices.map((invoice) => (
-              <View
+              <TransactionItem
                 key={invoice.id}
-                className="bg-white rounded-xl p-4 shadow-sm border border-gray-100"
-              >
-                <View className="flex-row justify-between items-start">
-                  {/* Informações da Transação */}
-                  <View className="flex-row items-start flex-1">
-                    <View
-                      className="w-10 h-10 rounded-full items-center justify-center mr-3"
-                      style={{
-                        backgroundColor: `${getTypeColor(invoice.type)}20`,
-                      }}
-                    >
-                      <Ionicons
-                        name={getTypeIcon(invoice.type) as any}
-                        size={20}
-                        color={getTypeColor(invoice.type)}
-                      />
-                    </View>
-
-                    <View className="flex-1">
-                      <Text className="text-lg font-medium text-gray-800">
-                        {invoice.receiver_name}
-                      </Text>
-                      <View className="flex-row items-center mt-1">
-                        <Text className="text-gray-500 text-sm">
-                          {new Date(invoice.date).toLocaleDateString("pt-BR")}
-                        </Text>
-                        <Text className="text-gray-400 mx-2">•</Text>
-                        <Text className="text-gray-500 text-sm">
-                          {getTypeDisplayName(invoice.type)}
-                        </Text>
-                      </View>
-                    </View>
-                  </View>
-
-                  {/* Valor e Ações */}
-                  <View className="items-end">
-                    <Text
-                      className={`text-lg font-bold ${
-                        invoice.type === "deposito"
-                          ? "text-green-500"
-                          : "text-red-500"
-                      }`}
-                    >
-                      {invoice.type === "deposito" ? "+ " : "- "}
-                      {formatCurrency(invoice.amount)}
-                    </Text>
-
-                    {/* Botões de Ação */}
-                    <View className="flex-row mt-2 space-x-2">
-                      <TouchableOpacity
-                        className="p-2 rounded-lg bg-blue-50"
-                        onPress={() => handleEditTransaction(invoice.id!)}
-                      >
-                        <Ionicons name="pencil" size={16} color="#3b82f6" />
-                      </TouchableOpacity>
-
-                      <TouchableOpacity
-                        className="p-2 rounded-lg bg-red-50 ml-4"
-                        onPress={() => handleDeleteTransaction(invoice)}
-                        disabled={deletingId === invoice.id}
-                      >
-                        {deletingId === invoice.id ? (
-                          <ActivityIndicator size="small" color="#ef4444" />
-                        ) : (
-                          <Ionicons name="trash" size={16} color="#ef4444" />
-                        )}
-                      </TouchableOpacity>
-                    </View>
-                  </View>
-                </View>
-              </View>
+                invoice={invoice}
+                onEdit={handleEditTransaction}
+                onDelete={handleDeleteTransaction}
+                deletingId={deletingId}
+              />
             ))}
           </View>
         )}

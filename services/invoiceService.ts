@@ -14,13 +14,10 @@ import { db } from "../lib/firebase";
 import { CreateInvoiceData, PersonalInvoice } from "../types";
 
 export const invoiceService = {
-  // Criar nova invoice
   async createInvoice(
     invoice: CreateInvoiceData
   ): Promise<{ data: PersonalInvoice | null; error: string | null }> {
     try {
-      console.log("🧾 Creating new invoice for user:", invoice.user_id);
-
       const now = new Date().toISOString();
       const invoiceData = {
         ...invoice,
@@ -38,21 +35,16 @@ export const invoiceService = {
         ...invoiceData,
       };
 
-      console.log("✅ Invoice created successfully:", newInvoice.id);
       return { data: newInvoice, error: null };
     } catch (error: any) {
-      console.error("❌ Error creating invoice:", error);
       return { data: null, error: error.message };
     }
   },
 
-  // Buscar todas as invoices do usuário
   async getUserInvoices(
     userId: string
   ): Promise<{ data: PersonalInvoice[] | null; error: string | null }> {
     try {
-      console.log("🧾 Fetching invoices for user:", userId);
-
       const q = query(
         collection(db, "personal_invoices"),
         where("user_id", "==", userId)
@@ -75,31 +67,17 @@ export const invoiceService = {
         } as PersonalInvoice);
       });
 
-      // Ordenar manualmente por data (mais recente primeiro)
-      invoices.sort(
-        (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
-      );
-
-      console.log(
-        "✅ User invoices fetched successfully:",
-        invoices.length,
-        "records"
-      );
       return { data: invoices, error: null };
     } catch (error: any) {
-      console.error("❌ Error fetching user invoices:", error);
       return { data: [], error: error.message };
     }
   },
 
-  // Buscar invoice por ID
   async getInvoiceById(
     userId: string,
     invoiceId: string
   ): Promise<{ data: PersonalInvoice | null; error: string | null }> {
     try {
-      console.log("🔍 Fetching invoice by ID:", invoiceId);
-
       const docRef = doc(db, "personal_invoices", invoiceId);
       const docSnap = await getDoc(docRef);
 
@@ -116,21 +94,16 @@ export const invoiceService = {
 
       return { data: null, error: "Transação não encontrada" };
     } catch (error: any) {
-      console.error("❌ Error fetching invoice by ID:", error);
       return { data: null, error: error.message };
     }
   },
 
-  // Atualizar invoice
   async updateInvoice(
     userId: string,
     invoiceId: string,
     updates: Partial<PersonalInvoice>
   ): Promise<{ success: boolean; error: string | null }> {
     try {
-      console.log("📝 Updating invoice:", invoiceId);
-
-      // Verificar se a invoice pertence ao usuário
       const currentInvoice = await this.getInvoiceById(userId, invoiceId);
       if (!currentInvoice.data) {
         return { success: false, error: "Transação não encontrada" };
@@ -142,30 +115,22 @@ export const invoiceService = {
         updated_at: serverTimestamp(),
       });
 
-      console.log("✅ Invoice updated successfully");
       return { success: true, error: null };
     } catch (error: any) {
-      console.error("❌ Error updating invoice:", error);
       return { success: false, error: error.message };
     }
   },
 
-  // Deletar invoice
   async deleteInvoice(invoiceId: string): Promise<{ error: string | null }> {
     try {
-      console.log("🧾 Deleting invoice:", invoiceId);
-
       await deleteDoc(doc(db, "personal_invoices", invoiceId));
 
-      console.log("✅ Invoice deleted successfully");
       return { error: null };
     } catch (error: any) {
-      console.error("❌ Error deleting invoice:", error);
       return { error: error.message };
     }
   },
 
-  // Calcular resumo financeiro
   async getFinancialSummary(userId: string): Promise<{
     totalIncome: number;
     totalExpense: number;
@@ -173,8 +138,6 @@ export const invoiceService = {
     error: string | null;
   }> {
     try {
-      console.log("💰 Calculating financial summary for user:", userId);
-
       const invoicesResult = await this.getUserInvoices(userId);
 
       if (invoicesResult.error) {
@@ -197,10 +160,8 @@ export const invoiceService = {
 
       summary.balance = summary.totalIncome - summary.totalExpense;
 
-      console.log("✅ Financial summary calculated:", summary);
       return { ...summary, error: null };
     } catch (error: any) {
-      console.error("❌ Error calculating financial summary:", error);
       return {
         totalIncome: 0,
         totalExpense: 0,

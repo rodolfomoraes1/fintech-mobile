@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Alert } from "react-native";
 import { balanceService } from "../services/balanceService";
 import { UserBalance } from "../types";
 
@@ -19,44 +20,30 @@ export const useBalance = (userId: string | null) => {
         setIsLoading(true);
         setError(null);
 
-        console.log("💰 Fetching balance for user:", userId);
-
-        // ✅ BUSCAR SALDO ATUAL (CRÍTICO)
         const currentBalanceResult =
           await balanceService.getCurrentBalance(userId);
         if (currentBalanceResult.error) {
           throw new Error(currentBalanceResult.error);
         }
 
-        // ✅ BUSCAR HISTÓRICO (NÃO-CRÍTICO) - NÃO QUEBRA O FLUXO SE DER ERRO
         let historyData: UserBalance[] = [];
         try {
           const historyResult = await balanceService.getUserBalances(userId);
           if (!historyResult.error && historyResult.data) {
             historyData = historyResult.data;
-            console.log(
-              "✅ Balance history loaded:",
-              historyData.length,
-              "records"
-            );
           } else if (historyResult.error) {
-            console.warn(
-              "⚠️ Could not load balance history:",
-              historyResult.error
+            Alert.alert(
+              "Erro",
+              "Não foi possível carregar o histórico de saldo"
             );
-            // Não joga erro, apenas registra o warning
           }
         } catch (historyError) {
-          console.warn("⚠️ Error loading balance history:", historyError);
-          // Continua o fluxo mesmo com erro no histórico
+          Alert.alert("Erro", "Erro ao carregar o histórico de saldo");
         }
 
         setCurrentBalance(currentBalanceResult.data || 0);
         setBalanceHistory(historyData);
-
-        console.log("✅ Current balance loaded:", currentBalanceResult.data);
       } catch (err: any) {
-        console.error("❌ Error fetching current balance:", err);
         setError(err.message);
         setCurrentBalance(0);
         setBalanceHistory([]);
@@ -77,7 +64,7 @@ export const useBalance = (userId: string | null) => {
         setCurrentBalance(result.data);
       }
     } catch (err: any) {
-      console.error("❌ Error refreshing balance:", err);
+      Alert.alert("Erro", "Não foi possível atualizar o saldo");
     }
   };
 

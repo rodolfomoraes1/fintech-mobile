@@ -80,7 +80,6 @@ export default function LoginScreen() {
         />
 
         <View className="space-y-4">
-          {/* Campo Email */}
           <View>
             <Text className="text-gray-700 mb-2 font-medium">E-mail</Text>
             <View className="flex-row items-center border border-gray-300 rounded-lg px-4 bg-white">
@@ -98,7 +97,6 @@ export default function LoginScreen() {
             </View>
           </View>
 
-          {/* Campo Senha */}
           <View>
             <Text className="text-gray-700 mb-2 font-medium">Senha</Text>
             <View className="flex-row items-center border border-gray-300 rounded-lg px-4 bg-white">
@@ -124,7 +122,6 @@ export default function LoginScreen() {
             </View>
           </View>
 
-          {/* Botão Entrar */}
           <TouchableOpacity
             className={`rounded-lg py-4 mt-6 ${
               authLoading ? "bg-secondary" : "bg-primary"

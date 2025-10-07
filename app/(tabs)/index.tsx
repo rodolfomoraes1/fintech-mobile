@@ -1,26 +1,17 @@
-import { UserAvatar } from "@/components/UserAvatar";
+import { BalanceCard } from "@/components/dashboard/BalanceCard";
+import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
+import { FinancialChart } from "@/components/dashboard/FinancialChart";
+import { TransactionsList } from "@/components/dashboard/TransactionsList";
 import { useBalance } from "@/hooks/useBalance";
 import { useInvoices } from "@/hooks/useInvoices";
-import { Ionicons } from "@expo/vector-icons";
-import { Image } from "expo-image";
 import { useFocusEffect } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import React, { useCallback, useEffect, useState } from "react";
-import {
-  ActivityIndicator,
-  Animated,
-  Dimensions,
-  ScrollView,
-  Text,
-  TouchableOpacity,
-  View,
-} from "react-native";
-import { PieChart } from "react-native-chart-kit";
+import { Animated, ScrollView, View } from "react-native";
 import { useAuth } from "../../contexts/AuthContext";
 
 export default function Dashboard() {
   const { user } = useAuth();
-  const { width } = Dimensions.get("window");
   const {
     currentBalance,
     isLoading: balanceLoading,
@@ -37,33 +28,23 @@ export default function Dashboard() {
   const [isChartVisible, setIsChartVisible] = useState(true);
   const animation = useState(new Animated.Value(1))[0];
 
-  // Função para atualizar os dados
   const refreshData = async () => {
     try {
       await Promise.all([refreshBalance(), refreshInvoices()]);
     } catch (error) {
-      console.error("Erro ao atualizar dados:", error);
+      // Erro tratado pelos hooks individuais
     }
   };
 
-  // Use useFocusEffect para atualizar sempre que a tela receber foco
   useFocusEffect(
     useCallback(() => {
       refreshData();
     }, [])
   );
 
-  // Mantenha o useEffect para o carregamento inicial
   useEffect(() => {
     refreshData();
   }, []);
-
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat("pt-BR", {
-      style: "currency",
-      currency: "BRL",
-    }).format(value);
-  };
 
   const calculateTotals = () => {
     let totalIncome = 0;
@@ -82,28 +63,18 @@ export default function Dashboard() {
 
   const { totalIncome, totalExpense } = calculateTotals();
 
-  const getTypeDisplayName = (type: string) => {
-    const types = {
-      deposito: "Depósito",
-      transferencia: "Transferência",
-      pagamento: "Pagamento",
-    };
-    return types[type as keyof typeof types] || type;
-  };
-
   const getChartData = () => {
-    const { totalIncome, totalExpense } = calculateTotals();
     return [
       {
         name: "Receitas",
         value: totalIncome,
-        color: "#10b981", // verde
+        color: "#10b981",
         legendFontColor: "#7F7F7F",
       },
       {
         name: "Despesas",
         value: totalExpense,
-        color: "#ef4444", // vermelho
+        color: "#ef4444",
         legendFontColor: "#7F7F7F",
       },
     ];
@@ -121,200 +92,35 @@ export default function Dashboard() {
     }).start();
   };
 
-  console.log("User no Dashboard:", user?.email);
-  console.log("Current Balance:", currentBalance);
-  console.log("Invoices count:", invoices.length);
-
   return (
     <View className="flex-1 bg-gray-50">
-      {/* Header */}
       <View className="bg-dark pt-12 pb-6 px-6">
-        <View className="flex-row justify-between items-center">
-          {/* Nome do Usuário e Logo */}
-          <View className="flex-row items-center flex-1">
-            <Image
-              source={require("@/assets/images/favicon.png")}
-              style={{
-                width: width * 0.08,
-                height: width * 0.08,
-                resizeMode: "contain",
-                marginRight: 12,
-              }}
-            />
-            <View>
-              <Text className="text-white text-lg">Olá,</Text>
-              <Text className="text-white text-xl font-bold">
-                {user?.name || "Usuário"}
-              </Text>
-            </View>
-          </View>
-
-          {/* Avatar com Menu */}
-          <UserAvatar user={user} />
-        </View>
-
-        {/* Card do Saldo */}
-        <View className="mt-6 bg-white rounded-2xl p-6 shadow-lg">
-          <Text className="text-gray-500 text-lg">Saldo Total</Text>
-
-          {balanceLoading ? (
-            <View className="flex-row items-center mt-2">
-              <ActivityIndicator size="small" color="#47A138" />
-              <Text className="text-gray-500 ml-2">Carregando saldo...</Text>
-            </View>
-          ) : balanceError ? (
-            <Text className="text-red-500 text-lg mt-2">
-              Erro ao carregar saldo
-            </Text>
-          ) : (
-            <>
-              <Text className="text-3xl font-bold text-gray-800 mt-2">
-                {formatCurrency(currentBalance)}
-              </Text>
-              <View className="flex-row justify-between mt-4">
-                <View>
-                  <Text className="text-green-500 font-bold">
-                    {formatCurrency(totalIncome)}
-                  </Text>
-                  <Text className="text-gray-500 text-sm">Receitas</Text>
-                </View>
-                <View>
-                  <Text className="text-red-500 font-bold">
-                    {formatCurrency(totalExpense)}
-                  </Text>
-                  <Text className="text-gray-500 text-sm">Despesas</Text>
-                </View>
-              </View>
-            </>
-          )}
-        </View>
+        <DashboardHeader user={user} />
+        <BalanceCard
+          balance={currentBalance}
+          isLoading={balanceLoading}
+          error={balanceError}
+          totalIncome={totalIncome}
+          totalExpense={totalExpense}
+        />
       </View>
 
-      {/* Gráfico Colapsável Animado */}
-      <View className="bg-white">
-        <TouchableOpacity
-          onPress={toggleChart}
-          className="flex-row justify-between items-center px-6 py-4"
-        >
-          <Text className="text-xl font-bold text-gray-800">
-            Resumo Financeiro
-          </Text>
-          <Animated.View
-            style={{
-              transform: [
-                {
-                  rotate: animation.interpolate({
-                    inputRange: [0, 1],
-                    outputRange: ["0deg", "180deg"],
-                  }),
-                },
-              ],
-            }}
-          >
-            <Ionicons name="chevron-down" size={24} color="#4B5563" />
-          </Animated.View>
-        </TouchableOpacity>
+      <FinancialChart
+        isVisible={isChartVisible}
+        onToggle={toggleChart}
+        animation={animation}
+        data={getChartData()}
+        isLoading={balanceLoading}
+        hasError={!!balanceError}
+      />
 
-        <Animated.View
-          style={{
-            opacity: animation,
-            transform: [
-              {
-                translateY: animation.interpolate({
-                  inputRange: [0, 1],
-                  outputRange: [-20, 0],
-                }),
-              },
-            ],
-          }}
-        >
-          {isChartVisible && (
-            <View className="px-6 pb-4">
-              {!balanceLoading && !balanceError && (
-                <PieChart
-                  data={getChartData()}
-                  width={width - 32} // Largura total menos padding
-                  height={200}
-                  chartConfig={{
-                    backgroundColor: "#ffffff",
-                    backgroundGradientFrom: "#ffffff",
-                    backgroundGradientTo: "#ffffff",
-                    color: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
-                  }}
-                  accessor="value"
-                  backgroundColor="transparent"
-                  paddingLeft="0"
-                  absolute
-                />
-              )}
-            </View>
-          )}
-        </Animated.View>
-      </View>
-
-      {/* Lista de Transações */}
       <ScrollView className="flex-1 px-6 bg-bgColors-paleGreen">
-        <Text className="text-xl font-bold text-gray-800 mb-4 mt-4">
-          Transações Recentes
-        </Text>
-
-        {invoicesLoading ? (
-          <View className="items-center py-8">
-            <ActivityIndicator size="large" color="#47A138" />
-            <Text className="text-gray-500 mt-2">Carregando transações...</Text>
-          </View>
-        ) : invoicesError ? (
-          <View className="items-center py-8">
-            <Text className="text-red-500">Erro ao carregar transações</Text>
-            <Text className="text-gray-500 text-sm mt-1">{invoicesError}</Text>
-          </View>
-        ) : invoices.length === 0 ? (
-          <View className="items-center py-8">
-            <Text className="text-gray-500 text-lg">
-              Nenhuma transação encontrada
-            </Text>
-            <Text className="text-gray-400 text-sm mt-1">
-              Suas transações aparecerão aqui
-            </Text>
-          </View>
-        ) : (
-          invoices.map((invoice) => (
-            <View
-              key={invoice.id}
-              className="bg-white rounded-xl p-4 mb-3 shadow-sm"
-            >
-              <View className="flex-row justify-between items-start">
-                <View className="flex-1">
-                  <Text className="text-lg font-medium text-gray-800">
-                    {invoice.receiver_name}
-                  </Text>
-                  <View className="flex-row items-center mt-1">
-                    <Text className="text-gray-500 text-sm">
-                      {new Date(invoice.date).toLocaleDateString("pt-BR")}
-                    </Text>
-                    <Text className="text-gray-400 mx-2">•</Text>
-                    <Text className="text-gray-500 text-sm">
-                      {getTypeDisplayName(invoice.type)}
-                    </Text>
-                  </View>
-                </View>
-                <Text
-                  className={`text-lg font-bold ${
-                    invoice.type === "deposito"
-                      ? "text-green-500"
-                      : "text-red-500"
-                  }`}
-                >
-                  {invoice.type === "deposito" ? "+ " : "- "}
-                  {formatCurrency(invoice.amount)}
-                </Text>
-              </View>
-            </View>
-          ))
-        )}
+        <TransactionsList
+          isLoading={invoicesLoading}
+          error={invoicesError}
+          transactions={invoices}
+        />
       </ScrollView>
-
-      {/* REMOVER BOTÃO DE SAIR ANTIGO */}
 
       <StatusBar style="light" />
     </View>
