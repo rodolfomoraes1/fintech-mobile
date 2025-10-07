@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { balanceService } from "../services/balanceService";
 import { invoiceService } from "../services/invoiceService";
-import { InvoiceType, PersonalInvoice } from "../types";
+import { CreateInvoiceData, InvoiceType, PersonalInvoice } from "../types";
 
 export const useInvoices = (userId: string | null) => {
   const [invoices, setInvoices] = useState<PersonalInvoice[]>([]);
@@ -42,10 +42,17 @@ export const useInvoices = (userId: string | null) => {
   }, [userId]);
 
   const addInvoice = async (
-    invoice: Omit<PersonalInvoice, "id">
+    invoice: CreateInvoiceData
   ): Promise<{ success: boolean; error?: string }> => {
     try {
-      const result = await invoiceService.createInvoice(invoice);
+      const now = new Date().toISOString();
+      const invoiceWithTimestamps = {
+        ...invoice,
+        created_at: invoice.created_at || now,
+        updated_at: invoice.updated_at || now,
+      };
+
+      const result = await invoiceService.createInvoice(invoiceWithTimestamps);
 
       if (result.error) {
         return { success: false, error: result.error };

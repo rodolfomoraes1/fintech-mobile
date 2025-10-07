@@ -11,19 +11,21 @@ import {
   where,
 } from "firebase/firestore";
 import { db } from "../lib/firebase";
-import { PersonalInvoice } from "../types";
+import { CreateInvoiceData, PersonalInvoice } from "../types";
 
 export const invoiceService = {
   // Criar nova invoice
   async createInvoice(
-    invoice: Omit<PersonalInvoice, "id">
+    invoice: CreateInvoiceData
   ): Promise<{ data: PersonalInvoice | null; error: string | null }> {
     try {
       console.log("🧾 Creating new invoice for user:", invoice.user_id);
 
+      const now = new Date().toISOString();
       const invoiceData = {
         ...invoice,
-        created_at: new Date().toISOString(),
+        created_at: invoice.created_at || now,
+        updated_at: invoice.updated_at || now,
       };
 
       const docRef = await addDoc(

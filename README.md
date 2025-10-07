@@ -27,6 +27,7 @@ Desenvolver uma aplicação de gerenciamento financeiro, utilizando React Native
 - Expo
 - Tailwindcss e Nativewind
 - Firebase
+- Context Api
 
 ## Repositório
 
@@ -36,8 +37,9 @@ Desenvolver uma aplicação de gerenciamento financeiro, utilizando React Native
 
 - [x] Tela Principal (Dashboard)
 - [x] Tela de Listagem de Transações
-- [ ] Tela de Adicionar/Editar Transação
+- [x] Tela de Adicionar/Editar Transação
 - [x] Validação Avançada de campos
-- [ ] Upload de Recibos (salvando-os no Firebase Storage)
+- [x] Upload de Recibos (salvando-os no Firebase Storage) - (Firebase Storage estava indisponível. O service foi implementado porém não foi possível concluir a integração)
 - [x] Gerenciamento de Estado utilizando Context API
 - [x] Autenticação com Firebase
+- [ ] Gráfico com insights

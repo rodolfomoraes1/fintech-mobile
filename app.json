@@ -35,6 +35,12 @@
             "backgroundColor": "#E4EDE3"
           }
         }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "O aplicativo precisa acessar suas fotos para adicionar comprovantes."
+        }
       ]
     ]
   }

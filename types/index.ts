@@ -13,14 +13,24 @@ export interface UserBalance {
 export type InvoiceType = "pagamento" | "transferencia" | "deposito";
 
 export interface PersonalInvoice {
-  id?: string;
+  id: string;
   receiver_name: string;
   amount: number;
   date: string;
   type: InvoiceType;
   user_id: string;
-  created_at?: string;
+  receipt_url?: string;
+  created_at: string;
+  updated_at: string;
 }
+
+export type CreateInvoiceData = Omit<
+  PersonalInvoice,
+  "id" | "created_at" | "updated_at"
+> & {
+  created_at?: string;
+  updated_at?: string;
+};
 
 export interface AuthContextType {
   user: User | null;

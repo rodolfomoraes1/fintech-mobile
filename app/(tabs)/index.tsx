@@ -2,8 +2,9 @@ import { UserAvatar } from "@/components/UserAvatar";
 import { useBalance } from "@/hooks/useBalance";
 import { useInvoices } from "@/hooks/useInvoices";
 import { Image } from "expo-image";
+import { useFocusEffect } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import React, { useEffect } from "react";
+import React, { useCallback, useEffect } from "react";
 import {
   ActivityIndicator,
   Dimensions,
@@ -29,15 +30,24 @@ export default function Dashboard() {
     refreshInvoices,
   } = useInvoices(user?.id || null);
 
-  useEffect(() => {
-    const refreshData = async () => {
-      try {
-        await Promise.all([refreshBalance(), refreshInvoices()]);
-      } catch (error) {
-        console.error("Erro ao atualizar dados:", error);
-      }
-    };
+  // Função para atualizar os dados
+  const refreshData = async () => {
+    try {
+      await Promise.all([refreshBalance(), refreshInvoices()]);
+    } catch (error) {
+      console.error("Erro ao atualizar dados:", error);
+    }
+  };
 
+  // Use useFocusEffect para atualizar sempre que a tela receber foco
+  useFocusEffect(
+    useCallback(() => {
+      refreshData();
+    }, [])
+  );
+
+  // Mantenha o useEffect para o carregamento inicial
+  useEffect(() => {
     refreshData();
   }, []);
 

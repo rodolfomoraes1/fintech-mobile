@@ -1,9 +1,11 @@
 import { Ionicons } from "@expo/vector-icons";
+import * as ImagePicker from "expo-image-picker";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
+  Image,
   ScrollView,
   Text,
   TextInput,
@@ -27,14 +29,16 @@ export default function EditTransactionScreen() {
     date: new Date().toISOString().split("T")[0],
     type: "deposito" as InvoiceType,
     user_id: user?.id || "",
+    receipt_url: "",
   });
 
-  useEffect(() => {
-    loadInvoice();
-  }, []);
+  const [receiptImage, setReceiptImage] = useState<string | null>(null);
 
   const loadInvoice = async () => {
-    if (!user?.id || !params.id) return;
+    if (!user?.id || !params.id) {
+      router.back();
+      return;
+    }
 
     try {
       setIsLoading(true);
@@ -50,20 +54,30 @@ export default function EditTransactionScreen() {
       }
 
       setFormData({
-        id: result.data.id + "",
+        id: result.data.id,
         receiver_name: result.data.receiver_name,
         amount: result.data.amount.toString(),
         date: result.data.date,
         type: result.data.type as InvoiceType,
         user_id: result.data.user_id,
+        receipt_url: result.data.receipt_url || "",
       });
+
+      if (result.data.receipt_url) {
+        setReceiptImage(result.data.receipt_url);
+      }
     } catch (error) {
+      console.error("Erro ao carregar transação:", error);
       Alert.alert("Erro", "Erro ao carregar transação");
       router.back();
     } finally {
       setIsLoading(false);
     }
   };
+
+  useEffect(() => {
+    loadInvoice();
+  }, [params.id]);
 
   const updateField = (
     field: keyof typeof formData,
@@ -91,17 +105,56 @@ export default function EditTransactionScreen() {
     return true;
   };
 
+  const pickImage = async () => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+
+    if (status !== "granted") {
+      Alert.alert(
+        "Permissão necessária",
+        "Precisamos de acesso à sua galeria."
+      );
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [4, 3],
+      quality: 0.8,
+    });
+
+    if (!result.canceled) {
+      setReceiptImage(result.assets[0].uri);
+    }
+  };
+
   const handleUpdateTransaction = async () => {
     if (!validateForm() || !user?.id) return;
 
     try {
       setIsLoading(true);
 
+      // Firebase Storage upload commented due to location restrictions
+      // let receiptUrl = formData.receipt_url;
+      // if (receiptImage && receiptImage !== formData.receipt_url) {
+      //   const uploadResult = await storageService.uploadReceipt(
+      //     user.id,
+      //     formData.id,
+      //     receiptImage
+      //   );
+      //
+      //   if (uploadResult.error) {
+      //     throw new Error(uploadResult.error);
+      //   }
+      //   receiptUrl = uploadResult.url ?? "";
+      // }
+
       const result = await invoiceService.updateInvoice(user.id, formData.id, {
         receiver_name: formData.receiver_name,
         amount: parseFloat(formData.amount),
         date: formData.date,
         type: formData.type,
+        receipt_url: "", // Set empty as Storage is not available
       });
 
       if (result.success) {
@@ -122,8 +175,9 @@ export default function EditTransactionScreen() {
           result.error || "Não foi possível atualizar a transação"
         );
       }
-    } catch (error) {
-      Alert.alert("Erro", "Ocorreu um erro inesperado");
+    } catch (error: any) {
+      console.error("Erro ao atualizar transação:", error);
+      Alert.alert("Erro", error.message || "Ocorreu um erro inesperado");
     } finally {
       setIsLoading(false);
     }
@@ -161,6 +215,23 @@ export default function EditTransactionScreen() {
       </View>
 
       <ScrollView className="flex-1 px-6 pt-6">
+        {/* Firebase Storage Warning */}
+        <View className="mb-6 bg-yellow-50 rounded-xl p-4 border border-yellow-200">
+          <View className="flex-row items-start">
+            <Ionicons name="warning" size={20} color="#EAB308" />
+            <View className="ml-3 flex-1">
+              <Text className="text-yellow-800 font-medium">
+                Aviso Importante
+              </Text>
+              <Text className="text-yellow-700 text-sm mt-1">
+                O upload de comprovantes está temporariamente indisponível. O
+                Firebase Storage não pôde ser configurado devido a restrições de
+                localização no plano gratuito.
+              </Text>
+            </View>
+          </View>
+        </View>
+
         {/* Tipo de Transação - Versão Simplificada */}
         <View className="mb-6">
           <Text className="text-gray-700 text-lg font-medium mb-3">
@@ -278,6 +349,39 @@ export default function EditTransactionScreen() {
           <Text className="text-gray-500 text-sm mt-1">
             Formato: AAAA-MM-DD (use o teclado para editar)
           </Text>
+        </View>
+
+        {/* Upload de Recibo - Apenas visualização local */}
+        <View className="mb-6">
+          <Text className="text-gray-700 text-lg font-medium mb-2">
+            Comprovante (apenas visualização)
+          </Text>
+
+          <TouchableOpacity
+            onPress={pickImage}
+            disabled={isLoading}
+            className="bg-white rounded-xl p-4 border border-gray-200 items-center"
+          >
+            {receiptImage ? (
+              <View className="w-full items-center">
+                <Image
+                  source={{ uri: receiptImage }}
+                  className="w-32 h-32 rounded-lg mb-2"
+                />
+                <Text className="text-primary">Trocar imagem</Text>
+              </View>
+            ) : (
+              <View className="items-center">
+                <Ionicons name="receipt-outline" size={32} color="#6b7280" />
+                <Text className="text-gray-500 mt-2">
+                  Toque para adicionar um comprovante
+                </Text>
+                <Text className="text-gray-400 text-xs mt-1">
+                  (Apenas visualização local)
+                </Text>
+              </View>
+            )}
+          </TouchableOpacity>
         </View>
 
         {/* Botão Atualizar */}
