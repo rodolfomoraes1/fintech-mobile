@@ -7,13 +7,13 @@
 1. Instalar dependências
 
    ```bash
-   npm install
+   npm run ci
    ```
 
 2. Executar app
 
    ```bash
-   npx expo start
+   npm run start
    ```
 
 ### Objetivo
@@ -24,6 +24,8 @@ Desenvolver uma aplicação de gerenciamento financeiro, utilizando React Native
 
 - React Native
 - TypeScript
+- Expo
+- Tailwindcss e Nativewind
 - Firebase
 
 ## Repositório
@@ -32,11 +34,10 @@ Desenvolver uma aplicação de gerenciamento financeiro, utilizando React Native
 
 ## Requisitos
 
-- [ ] Tela Principal (Dashboard)
-- [ ] Tela de Listagem de Transações
+- [x] Tela Principal (Dashboard)
+- [x] Tela de Listagem de Transações
 - [ ] Tela de Adicionar/Editar Transação
-- [ ] Validação Avançada de campos
+- [x] Validação Avançada de campos
 - [ ] Upload de Recibos (salvando-os no Firebase Storage)
-- [ ] Gerenciamento de Estado utilizando Context API
-
-## DONE
+- [x] Gerenciamento de Estado utilizando Context API
+- [x] Autenticação com Firebase

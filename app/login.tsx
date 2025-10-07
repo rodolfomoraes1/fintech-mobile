@@ -1,9 +1,11 @@
 import { Ionicons } from "@expo/vector-icons";
+import { Image } from "expo-image";
 import { useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Alert,
+  Dimensions,
   KeyboardAvoidingView,
   Platform,
   Text,
@@ -11,13 +13,21 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { useAuth } from "../contexts/AuthContext";
 
 export default function LoginScreen() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
+  const { width } = Dimensions.get("window");
+  const { user, signIn, isLoading: authLoading } = useAuth();
+
+  useEffect(() => {
+    if (user) {
+      router.replace("/(tabs)");
+    }
+  }, [user, router]);
 
   const validateForm = () => {
     if (!email.trim()) {
@@ -30,7 +40,6 @@ export default function LoginScreen() {
       return false;
     }
 
-    // Validação básica de e-mail
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
       Alert.alert("Erro", "Por favor, digite um e-mail válido");
@@ -43,37 +52,32 @@ export default function LoginScreen() {
   const handleLogin = async () => {
     if (!validateForm()) return;
 
-    setIsLoading(true);
+    try {
+      const { error } = await signIn(email, password);
 
-    setTimeout(() => {
-      setIsLoading(false);
-      router.replace("/(tabs)");
-    }, 1500);
-  };
-
-  const handleDemoLogin = () => {
-    setEmail("demo@email.com");
-    setPassword("123456");
+      if (error) {
+        Alert.alert("Erro", error);
+      }
+    } catch (error) {
+      Alert.alert("Erro", "Ocorreu um erro inesperado");
+    }
   };
 
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === "ios" ? "padding" : "height"}
-      className="flex-1 bg-white"
+      className="flex-1 bg-bgColors-paleGreen"
     >
       <View className="flex-1 justify-center px-8">
-        {/* Logo */}
-        <View className="items-center mb-12">
-          <View className="w-20 h-20 bg-green-500 rounded-2xl justify-center items-center mb-4">
-            <Text className="text-white font-bold text-2xl">💰</Text>
-          </View>
-          <Text className="text-3xl font-bold text-gray-800">Finance App</Text>
-          <Text className="text-gray-500 mt-2">Controle suas finanças</Text>
-        </View>
-
-        <Text className="text-2xl font-bold text-center text-gray-800 mb-8">
-          Login
-        </Text>
+        <Image
+          source={require("@/assets/images/logo.png")}
+          style={{
+            width: width * 0.5,
+            height: width * 0.5,
+            alignSelf: "center",
+            resizeMode: "contain",
+          }}
+        />
 
         <View className="space-y-4">
           {/* Campo Email */}
@@ -89,6 +93,7 @@ export default function LoginScreen() {
                 keyboardType="email-address"
                 autoCapitalize="none"
                 autoComplete="email"
+                editable={!authLoading}
               />
             </View>
           </View>
@@ -104,8 +109,12 @@ export default function LoginScreen() {
                 value={password}
                 onChangeText={setPassword}
                 secureTextEntry={!showPassword}
+                editable={!authLoading}
               />
-              <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
+              <TouchableOpacity
+                onPress={() => setShowPassword(!showPassword)}
+                disabled={authLoading}
+              >
                 <Ionicons
                   name={showPassword ? "eye-off-outline" : "eye-outline"}
                   size={20}
@@ -118,31 +127,23 @@ export default function LoginScreen() {
           {/* Botão Entrar */}
           <TouchableOpacity
             className={`rounded-lg py-4 mt-6 ${
-              isLoading ? "bg-green-400" : "bg-green-500"
+              authLoading ? "bg-secondary" : "bg-primary"
             }`}
             onPress={handleLogin}
-            disabled={isLoading}
+            disabled={authLoading}
           >
             <Text className="text-white text-center font-bold text-lg">
-              {isLoading ? "Entrando..." : "Entrar"}
+              {authLoading ? "Entrando..." : "Entrar"}
             </Text>
           </TouchableOpacity>
 
-          {/* Botão Demo */}
-          <TouchableOpacity
-            className="border border-green-500 rounded-lg py-4 mt-2"
-            onPress={handleDemoLogin}
-            disabled={isLoading}
-          >
-            <Text className="text-green-500 text-center font-bold text-lg">
-              Usar Dados de Demo
-            </Text>
-          </TouchableOpacity>
+          <View className="flex-row justify-center mt-4">
+            <Text className="text-gray-600">Não tem uma conta? </Text>
+            <TouchableOpacity onPress={() => router.push("/register")}>
+              <Text className="text-green-500 font-bold">Cadastre-se</Text>
+            </TouchableOpacity>
+          </View>
         </View>
-
-        <Text className="text-center text-gray-500 mt-8">
-          Versão 1.0 - Finance App
-        </Text>
       </View>
       <StatusBar style="auto" />
     </KeyboardAvoidingView>
