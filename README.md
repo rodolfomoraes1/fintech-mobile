@@ -22,7 +22,7 @@ Desenvolver uma aplicação de gerenciamento financeiro, utilizando React Native
 
 ## Ferramentas
 
-- React Native
+- React Native (+ React Native Animated)
 - TypeScript
 - Expo
 - Tailwindcss e Nativewind
@@ -42,4 +42,4 @@ Desenvolver uma aplicação de gerenciamento financeiro, utilizando React Native
 - [x] Upload de Recibos (salvando-os no Firebase Storage) - (Firebase Storage estava indisponível. O service foi implementado porém não foi possível concluir a integração)
 - [x] Gerenciamento de Estado utilizando Context API
 - [x] Autenticação com Firebase
-- [ ] Gráfico com insights
+- [x] Gráfico com insights

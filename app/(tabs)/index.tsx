@@ -1,17 +1,21 @@
 import { UserAvatar } from "@/components/UserAvatar";
 import { useBalance } from "@/hooks/useBalance";
 import { useInvoices } from "@/hooks/useInvoices";
+import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { useFocusEffect } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import React, { useCallback, useEffect } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
+  Animated,
   Dimensions,
   ScrollView,
   Text,
+  TouchableOpacity,
   View,
 } from "react-native";
+import { PieChart } from "react-native-chart-kit";
 import { useAuth } from "../../contexts/AuthContext";
 
 export default function Dashboard() {
@@ -29,6 +33,9 @@ export default function Dashboard() {
     error: invoicesError,
     refreshInvoices,
   } = useInvoices(user?.id || null);
+
+  const [isChartVisible, setIsChartVisible] = useState(true);
+  const animation = useState(new Animated.Value(1))[0];
 
   // Função para atualizar os dados
   const refreshData = async () => {
@@ -82,6 +89,36 @@ export default function Dashboard() {
       pagamento: "Pagamento",
     };
     return types[type as keyof typeof types] || type;
+  };
+
+  const getChartData = () => {
+    const { totalIncome, totalExpense } = calculateTotals();
+    return [
+      {
+        name: "Receitas",
+        value: totalIncome,
+        color: "#10b981", // verde
+        legendFontColor: "#7F7F7F",
+      },
+      {
+        name: "Despesas",
+        value: totalExpense,
+        color: "#ef4444", // vermelho
+        legendFontColor: "#7F7F7F",
+      },
+    ];
+  };
+
+  const toggleChart = () => {
+    const toValue = isChartVisible ? 0 : 1;
+    setIsChartVisible(!isChartVisible);
+
+    Animated.spring(animation, {
+      toValue,
+      useNativeDriver: true,
+      friction: 8,
+      tension: 40,
+    }).start();
   };
 
   console.log("User no Dashboard:", user?.email);
@@ -151,6 +188,68 @@ export default function Dashboard() {
             </>
           )}
         </View>
+      </View>
+
+      {/* Gráfico Colapsável Animado */}
+      <View className="bg-white">
+        <TouchableOpacity
+          onPress={toggleChart}
+          className="flex-row justify-between items-center px-6 py-4"
+        >
+          <Text className="text-xl font-bold text-gray-800">
+            Resumo Financeiro
+          </Text>
+          <Animated.View
+            style={{
+              transform: [
+                {
+                  rotate: animation.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: ["0deg", "180deg"],
+                  }),
+                },
+              ],
+            }}
+          >
+            <Ionicons name="chevron-down" size={24} color="#4B5563" />
+          </Animated.View>
+        </TouchableOpacity>
+
+        <Animated.View
+          style={{
+            opacity: animation,
+            transform: [
+              {
+                translateY: animation.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: [-20, 0],
+                }),
+              },
+            ],
+          }}
+        >
+          {isChartVisible && (
+            <View className="px-6 pb-4">
+              {!balanceLoading && !balanceError && (
+                <PieChart
+                  data={getChartData()}
+                  width={width - 32} // Largura total menos padding
+                  height={200}
+                  chartConfig={{
+                    backgroundColor: "#ffffff",
+                    backgroundGradientFrom: "#ffffff",
+                    backgroundGradientTo: "#ffffff",
+                    color: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
+                  }}
+                  accessor="value"
+                  backgroundColor="transparent"
+                  paddingLeft="0"
+                  absolute
+                />
+              )}
+            </View>
+          )}
+        </Animated.View>
       </View>
 
       {/* Lista de Transações */}
