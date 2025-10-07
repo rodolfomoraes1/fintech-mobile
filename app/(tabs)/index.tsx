@@ -3,7 +3,7 @@ import { useBalance } from "@/hooks/useBalance";
 import { useInvoices } from "@/hooks/useInvoices";
 import { Image } from "expo-image";
 import { StatusBar } from "expo-status-bar";
-import React from "react";
+import React, { useEffect } from "react";
 import {
   ActivityIndicator,
   Dimensions,
@@ -20,12 +20,26 @@ export default function Dashboard() {
     currentBalance,
     isLoading: balanceLoading,
     error: balanceError,
+    refreshBalance,
   } = useBalance(user?.id || null);
   const {
     invoices,
     isLoading: invoicesLoading,
     error: invoicesError,
+    refreshInvoices,
   } = useInvoices(user?.id || null);
+
+  useEffect(() => {
+    const refreshData = async () => {
+      try {
+        await Promise.all([refreshBalance(), refreshInvoices()]);
+      } catch (error) {
+        console.error("Erro ao atualizar dados:", error);
+      }
+    };
+
+    refreshData();
+  }, []);
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat("pt-BR", {

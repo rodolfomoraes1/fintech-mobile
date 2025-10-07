@@ -1,6 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
-import React, { useState } from "react";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -19,9 +19,10 @@ export default function TransactionsScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const router = useRouter();
+  const params = useLocalSearchParams();
 
   const handleCreateTransaction = () => {
-    router.push("../create-transaction");
+    router.push("/(tabs)/create-transaction");
   };
 
   const handleEditTransaction = (invoiceId: string) => {
@@ -102,6 +103,12 @@ export default function TransactionsScreen() {
   const getTypeColor = (type: string) => {
     return type === "deposito" ? "#10b981" : "#ef4444";
   };
+
+  useEffect(() => {
+    if (params.refresh === "true") {
+      handleRefresh();
+    }
+  }, [params.refresh]);
 
   return (
     <View className="flex-1 bg-bgColors-paleGreen">

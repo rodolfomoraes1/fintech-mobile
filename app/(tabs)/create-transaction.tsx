@@ -10,9 +10,9 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { useAuth } from "../contexts/AuthContext";
-import { useInvoices } from "../hooks/useInvoices";
-import { InvoiceType } from "../types";
+import { useAuth } from "../../contexts/AuthContext";
+import { useInvoices } from "../../hooks/useInvoices";
+import { InvoiceType } from "../../types";
 
 export default function CreateTransactionScreen() {
   const { user } = useAuth();
@@ -72,7 +72,14 @@ export default function CreateTransactionScreen() {
 
       if (result.success) {
         Alert.alert("Sucesso", "Transação criada com sucesso!", [
-          { text: "OK", onPress: () => router.replace("/(tabs)/transactions") },
+          {
+            text: "OK",
+            onPress: () =>
+              router.replace({
+                pathname: "/(tabs)/transactions",
+                params: { refresh: "true" },
+              }),
+          },
         ]);
       } else {
         Alert.alert(
@@ -85,32 +92,6 @@ export default function CreateTransactionScreen() {
       Alert.alert("Erro", "Ocorreu um erro inesperado");
     }
   };
-
-  const transactionTypes: {
-    value: InvoiceType;
-    label: string;
-    icon: string;
-    color: string;
-  }[] = [
-    {
-      value: "deposito",
-      label: "Depósito",
-      icon: "arrow-down-circle",
-      color: "#10b981",
-    },
-    {
-      value: "pagamento",
-      label: "Pagamento",
-      icon: "card",
-      color: "#ef4444",
-    },
-    {
-      value: "transferencia",
-      label: "Transferência",
-      icon: "swap-horizontal",
-      color: "#3b82f6",
-    },
-  ];
 
   return (
     <View className="flex-1 bg-bgColors-paleGreen pb-4">
@@ -136,92 +117,76 @@ export default function CreateTransactionScreen() {
       </View>
 
       <ScrollView className="flex-1 px-6 pt-6">
-        {/* Tipo de Transação */}
+        {/* Tipo de Transação - Versão Simplificada */}
         <View className="mb-6">
           <Text className="text-gray-700 text-lg font-medium mb-3">
             Tipo de Transação
           </Text>
-          <View className="flex-row space-x-3">
-            {/* Depósito */}
-            <TouchableOpacity
-              className={`flex-1 items-center py-3 rounded-xl border-2 ${
+
+          {/* Radio Button para Depósito */}
+          <TouchableOpacity
+            className="flex-row items-center py-3 px-4 bg-white rounded-xl border border-gray-200 mb-2"
+            onPress={() => updateTransactionType("deposito")}
+            disabled={isLoading}
+          >
+            <View
+              className={`w-5 h-5 rounded-full border-2 mr-3 justify-center items-center ${
                 formData.type === "deposito"
-                  ? "bg-white border-primary shadow-sm"
-                  : "bg-gray-50 border-gray-200"
+                  ? "border-green-500 bg-green-500"
+                  : "border-gray-400"
               }`}
-              onPress={() => updateTransactionType("deposito")}
-              disabled={isLoading}
             >
-              <Ionicons
-                name="arrow-down-circle"
-                size={24}
-                color={formData.type === "deposito" ? "#10b981" : "#9ca3af"}
-              />
-              <Text
-                className={`font-medium mt-1 text-sm ${
-                  formData.type === "deposito"
-                    ? "text-gray-800"
-                    : "text-gray-500"
-                }`}
-              >
-                Depósito
-              </Text>
-            </TouchableOpacity>
+              {formData.type === "deposito" && (
+                <View className="w-2 h-2 rounded-full bg-white" />
+              )}
+            </View>
+            <Ionicons name="arrow-down-circle" size={20} color="#10b981" />
+            <Text className="text-gray-800 font-medium ml-2">Depósito</Text>
+          </TouchableOpacity>
 
-            {/* Pagamento */}
-            <TouchableOpacity
-              className={`flex-1 items-center py-3 rounded-xl border-2 ${
+          {/* Radio Button para Pagamento */}
+          <TouchableOpacity
+            className="flex-row items-center py-3 px-4 bg-white rounded-xl border border-gray-200 mb-2"
+            onPress={() => updateTransactionType("pagamento")}
+            disabled={isLoading}
+          >
+            <View
+              className={`w-5 h-5 rounded-full border-2 mr-3 justify-center items-center ${
                 formData.type === "pagamento"
-                  ? "bg-white border-primary shadow-sm"
-                  : "bg-gray-50 border-gray-200"
+                  ? "border-red-500 bg-red-500"
+                  : "border-gray-400"
               }`}
-              onPress={() => updateTransactionType("pagamento")}
-              disabled={isLoading}
             >
-              <Ionicons
-                name="card"
-                size={24}
-                color={formData.type === "pagamento" ? "#ef4444" : "#9ca3af"}
-              />
-              <Text
-                className={`font-medium mt-1 text-sm ${
-                  formData.type === "pagamento"
-                    ? "text-gray-800"
-                    : "text-gray-500"
-                }`}
-              >
-                Pagamento
-              </Text>
-            </TouchableOpacity>
+              {formData.type === "pagamento" && (
+                <View className="w-2 h-2 rounded-full bg-white" />
+              )}
+            </View>
+            <Ionicons name="card" size={20} color="#ef4444" />
+            <Text className="text-gray-800 font-medium ml-2">Pagamento</Text>
+          </TouchableOpacity>
 
-            {/* Transferência */}
-            <TouchableOpacity
-              className={`flex-1 items-center py-3 rounded-xl border-2 ${
+          {/* Radio Button para Transferência */}
+          <TouchableOpacity
+            className="flex-row items-center py-3 px-4 bg-white rounded-xl border border-gray-200"
+            onPress={() => updateTransactionType("transferencia")}
+            disabled={isLoading}
+          >
+            <View
+              className={`w-5 h-5 rounded-full border-2 mr-3 justify-center items-center ${
                 formData.type === "transferencia"
-                  ? "bg-white border-primary shadow-sm"
-                  : "bg-gray-50 border-gray-200"
+                  ? "border-blue-500 bg-blue-500"
+                  : "border-gray-400"
               }`}
-              onPress={() => updateTransactionType("transferencia")}
-              disabled={isLoading}
             >
-              <Ionicons
-                name="swap-horizontal"
-                size={24}
-                color={
-                  formData.type === "transferencia" ? "#3b82f6" : "#9ca3af"
-                }
-              />
-              <Text
-                className={`font-medium mt-1 text-sm ${
-                  formData.type === "transferencia"
-                    ? "text-gray-800"
-                    : "text-gray-500"
-                }`}
-              >
-                Transferência
-              </Text>
-            </TouchableOpacity>
-          </View>
+              {formData.type === "transferencia" && (
+                <View className="w-2 h-2 rounded-full bg-white" />
+              )}
+            </View>
+            <Ionicons name="swap-horizontal" size={20} color="#3b82f6" />
+            <Text className="text-gray-800 font-medium ml-2">
+              Transferência
+            </Text>
+          </TouchableOpacity>
         </View>
 
         {/* Destinatário */}
