@@ -47,6 +47,13 @@ export default function TabLayout() {
           href: null,
         }}
       />
+
+      <Tabs.Screen
+        name="edit-transaction"
+        options={{
+          href: null,
+        }}
+      />
     </Tabs>
   );
 }

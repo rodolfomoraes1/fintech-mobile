@@ -26,7 +26,10 @@ export default function TransactionsScreen() {
   };
 
   const handleEditTransaction = (invoiceId: string) => {
-    Alert.alert("Editar Transação", `Editar transação: ${invoiceId}`);
+    router.push({
+      pathname: "/edit-transaction",
+      params: { id: invoiceId },
+    });
   };
 
   // ✅ FUNÇÃO REAL DE EXCLUSÃO

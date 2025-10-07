@@ -3,8 +3,10 @@ import {
   collection,
   deleteDoc,
   doc,
+  getDoc,
   getDocs,
   query,
+  serverTimestamp,
   updateDoc,
   where,
 } from "firebase/firestore";
@@ -90,14 +92,27 @@ export const invoiceService = {
 
   // Buscar invoice por ID
   async getInvoiceById(
+    userId: string,
     invoiceId: string
   ): Promise<{ data: PersonalInvoice | null; error: string | null }> {
     try {
-      // Implementação simples - em produção usaríamos getDoc
-      const invoices = await this.getUserInvoices("temp"); // Precisamos ajustar isso
-      const invoice = invoices.data?.find((inv) => inv.id === invoiceId);
+      console.log("🔍 Fetching invoice by ID:", invoiceId);
 
-      return { data: invoice || null, error: null };
+      const docRef = doc(db, "personal_invoices", invoiceId);
+      const docSnap = await getDoc(docRef);
+
+      if (docSnap.exists() && docSnap.data().user_id === userId) {
+        const data = docSnap.data();
+        return {
+          data: {
+            id: docSnap.id,
+            ...data,
+          } as PersonalInvoice,
+          error: null,
+        };
+      }
+
+      return { data: null, error: "Transação não encontrada" };
     } catch (error: any) {
       console.error("❌ Error fetching invoice by ID:", error);
       return { data: null, error: error.message };
@@ -106,23 +121,30 @@ export const invoiceService = {
 
   // Atualizar invoice
   async updateInvoice(
+    userId: string,
     invoiceId: string,
     updates: Partial<PersonalInvoice>
-  ): Promise<{ error: string | null }> {
+  ): Promise<{ success: boolean; error: string | null }> {
     try {
-      console.log("🧾 Updating invoice:", invoiceId);
+      console.log("📝 Updating invoice:", invoiceId);
+
+      // Verificar se a invoice pertence ao usuário
+      const currentInvoice = await this.getInvoiceById(userId, invoiceId);
+      if (!currentInvoice.data) {
+        return { success: false, error: "Transação não encontrada" };
+      }
 
       const invoiceRef = doc(db, "personal_invoices", invoiceId);
       await updateDoc(invoiceRef, {
         ...updates,
-        updated_at: new Date().toISOString(),
+        updated_at: serverTimestamp(),
       });
 
       console.log("✅ Invoice updated successfully");
-      return { error: null };
+      return { success: true, error: null };
     } catch (error: any) {
       console.error("❌ Error updating invoice:", error);
-      return { error: error.message };
+      return { success: false, error: error.message };
     }
   },
 
