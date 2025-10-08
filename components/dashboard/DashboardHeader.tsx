@@ -1,6 +1,6 @@
 import { Image } from "expo-image";
 import React from "react";
-import { Dimensions, Text, View } from "react-native";
+import { Dimensions, Platform, Text, View } from "react-native";
 import { User } from "../../types";
 import { UserAvatar } from "./UserAvatar";
 
@@ -10,15 +10,18 @@ interface DashboardHeaderProps {
 
 export function DashboardHeader({ user }: DashboardHeaderProps) {
   const { width } = Dimensions.get("window");
+  const isWeb = Platform.OS === "web";
 
   return (
-    <View className="flex-row justify-between items-center">
-      <View className="flex-row items-center flex-1">
+    <View className={`${isWeb ? "flex-col" : "flex-row"} items-center`}>
+      <View
+        className={`flex-row items-center ${isWeb ? "mb-6 w-full justify-center" : "flex-1"}`}
+      >
         <Image
           source={require("@/assets/images/favicon.png")}
           style={{
-            width: width * 0.08,
-            height: width * 0.08,
+            width: isWeb ? 48 : width * 0.08,
+            height: isWeb ? 48 : width * 0.08,
             resizeMode: "contain",
             marginRight: 12,
           }}

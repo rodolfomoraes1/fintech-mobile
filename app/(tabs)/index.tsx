@@ -2,12 +2,13 @@ import { BalanceCard } from "@/components/dashboard/BalanceCard";
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
 import { FinancialChart } from "@/components/dashboard/FinancialChart";
 import { TransactionsList } from "@/components/dashboard/TransactionsList";
+import { WebActions } from "@/components/dashboard/WebActions";
 import { useBalance } from "@/hooks/useBalance";
 import { useInvoices } from "@/hooks/useInvoices";
 import { useFocusEffect } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import React, { useCallback, useEffect, useState } from "react";
-import { Animated, ScrollView, View } from "react-native";
+import { Animated, Platform, ScrollView, View } from "react-native";
 import { useAuth } from "../../contexts/AuthContext";
 
 export default function Dashboard() {
@@ -27,13 +28,12 @@ export default function Dashboard() {
 
   const [isChartVisible, setIsChartVisible] = useState(true);
   const animation = useState(new Animated.Value(1))[0];
+  const isWeb = Platform.OS === "web";
 
   const refreshData = async () => {
     try {
       await Promise.all([refreshBalance(), refreshInvoices()]);
-    } catch (error) {
-      // Erro tratado pelos hooks individuais
-    }
+    } catch (error) {}
   };
 
   useFocusEffect(
@@ -104,6 +104,8 @@ export default function Dashboard() {
           totalExpense={totalExpense}
         />
       </View>
+
+      {isWeb && <WebActions />}
 
       <FinancialChart
         isVisible={isChartVisible}
