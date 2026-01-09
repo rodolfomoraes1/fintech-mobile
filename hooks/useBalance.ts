@@ -1,11 +1,14 @@
 import { useEffect, useState } from "react";
 import { Alert } from "react-native";
-import { balanceService } from "../services/balanceService";
-import { UserBalance } from "../types";
+import { Balance } from "../domain/entities/Balance";
+import {
+  getCurrentBalanceUseCase,
+  getUserBalancesUseCase,
+} from "../infrastructure/di/container";
 
 export const useBalance = (userId: string | null) => {
   const [currentBalance, setCurrentBalance] = useState<number>(0);
-  const [balanceHistory, setBalanceHistory] = useState<UserBalance[]>([]);
+  const [balanceHistory, setBalanceHistory] = useState<Balance[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -21,14 +24,14 @@ export const useBalance = (userId: string | null) => {
         setError(null);
 
         const currentBalanceResult =
-          await balanceService.getCurrentBalance(userId);
+          await getCurrentBalanceUseCase.execute(userId);
         if (currentBalanceResult.error) {
           throw new Error(currentBalanceResult.error);
         }
 
-        let historyData: UserBalance[] = [];
+        let historyData: Balance[] = [];
         try {
-          const historyResult = await balanceService.getUserBalances(userId);
+          const historyResult = await getUserBalancesUseCase.execute(userId);
           if (!historyResult.error && historyResult.data) {
             historyData = historyResult.data;
           } else if (historyResult.error) {
@@ -59,7 +62,7 @@ export const useBalance = (userId: string | null) => {
     if (!userId) return;
 
     try {
-      const result = await balanceService.getCurrentBalance(userId);
+      const result = await getCurrentBalanceUseCase.execute(userId);
       if (!result.error && result.data !== null) {
         setCurrentBalance(result.data);
       }

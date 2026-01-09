@@ -6,16 +6,18 @@ import { SubmitButton } from "@/components/shared/SubmitButton";
 import { TransactionTypeSelector } from "@/components/shared/TransactionTypeSelector";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
-import { Alert, ScrollView, View } from "react-native";
+import { ActivityIndicator, Alert, ScrollView, Text, View } from "react-native";
 import { useAuth } from "../../contexts/AuthContext";
-import { invoiceService } from "../../services/invoiceService";
+import { useInvoices } from "../../hooks/useInvoices";
 import { InvoiceType } from "../../types";
 
 export default function EditTransactionScreen() {
   const params = useLocalSearchParams();
   const router = useRouter();
   const { user } = useAuth();
+  const { getInvoiceById, updateInvoice } = useInvoices(user?.id || null);
   const [isLoading, setIsLoading] = useState(false);
+  const [isLoadingData, setIsLoadingData] = useState(true);
   const [receiptImage, setReceiptImage] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     id: "",
@@ -34,11 +36,8 @@ export default function EditTransactionScreen() {
     }
 
     try {
-      setIsLoading(true);
-      const result = await invoiceService.getInvoiceById(
-        user.id,
-        params.id as string
-      );
+      setIsLoadingData(true);
+      const result = await getInvoiceById(params.id as string);
 
       if (result.error || !result.data) {
         Alert.alert("Erro", "Não foi possível carregar a transação");
@@ -63,13 +62,15 @@ export default function EditTransactionScreen() {
       Alert.alert("Erro", "Erro ao carregar transação");
       router.back();
     } finally {
-      setIsLoading(false);
+      setIsLoadingData(false);
     }
   };
 
   useEffect(() => {
-    loadInvoice();
-  }, [params.id]);
+    if (user?.id && params.id) {
+      loadInvoice();
+    }
+  }, [params.id, user?.id]);
 
   const updateField = (
     field: keyof typeof formData,
@@ -103,15 +104,16 @@ export default function EditTransactionScreen() {
     try {
       setIsLoading(true);
 
-      const result = await invoiceService.updateInvoice(user.id, formData.id, {
-        receiver_name: formData.receiver_name,
+      const result = await updateInvoice(formData.id, {
+        receiverName: formData.receiver_name,
         amount: parseFloat(formData.amount),
         date: formData.date,
         type: formData.type,
-        receipt_url: "",
+        receiptUrl: "",
       });
 
       if (result.success) {
+        console.log("Transação atualizada com sucesso");
         Alert.alert("Sucesso", "Transação atualizada com sucesso!", [
           {
             text: "OK",
@@ -123,13 +125,45 @@ export default function EditTransactionScreen() {
           },
         ]);
       } else {
-        Alert.alert(
-          "Erro",
-          result.error || "Não foi possível atualizar a transação"
-        );
+        if (
+          result.error?.includes("permission") ||
+          result.error?.includes("Missing or insufficient permissions")
+        ) {
+          Alert.alert(
+            "Sessão Expirada",
+            "Sua sessão expirou. Por favor, faça login novamente.",
+            [
+              {
+                text: "OK",
+                onPress: () => router.replace("/login"),
+              },
+            ]
+          );
+        } else {
+          Alert.alert(
+            "Erro",
+            result.error || "Não foi possível atualizar a transação"
+          );
+        }
       }
     } catch (error: any) {
-      Alert.alert("Erro", error.message || "Ocorreu um erro inesperado");
+      if (
+        error.message?.includes("permission") ||
+        error.message?.includes("Missing or insufficient permissions")
+      ) {
+        Alert.alert(
+          "Sessão Expirada",
+          "Sua sessão expirou. Por favor, faça login novamente.",
+          [
+            {
+              text: "OK",
+              onPress: () => router.replace("/login"),
+            },
+          ]
+        );
+      } else {
+        Alert.alert("Erro", error.message || "Ocorreu um erro inesperado");
+      }
     } finally {
       setIsLoading(false);
     }
@@ -143,60 +177,67 @@ export default function EditTransactionScreen() {
         onClose={() => router.replace("/(tabs)/transactions")}
       />
 
-      <ScrollView className="flex-1 px-6 pt-6">
-        <StorageWarning />
-
-        <TransactionTypeSelector
-          selectedType={formData.type}
-          onTypeSelect={(type) => updateField("type", type)}
-          disabled={isLoading}
-        />
-
-        <FormInput
-          label="Destinatário"
-          value={formData.receiver_name}
-          onChangeText={(value) => updateField("receiver_name", value)}
-          placeholder="Ex: Mercado, Empresa, Pessoa..."
-          disabled={isLoading}
-        />
-
-        <FormInput
-          label="Valor"
-          value={formData.amount}
-          onChangeText={(value) =>
-            updateField("amount", value.replace(",", "."))
-          }
-          placeholder="0,00"
-          keyboardType="decimal-pad"
-          prefix="R$"
-          disabled={isLoading}
-        />
-
-        <FormInput
-          label="Data"
-          value={formData.date}
-          onChangeText={(value) => updateField("date", value)}
-          placeholder="YYYY-MM-DD"
-          helpText="Formato: AAAA-MM-DD (use o teclado para editar)"
-          disabled={isLoading}
-        />
-
-        <ImageUploader
-          image={receiptImage}
-          onImageSelect={setReceiptImage}
-          disabled={isLoading}
-        />
-
-        <View className="mt-4">
-          <SubmitButton
-            onPress={handleUpdateTransaction}
-            isLoading={isLoading}
-            title="Atualizar Transação"
-          />
+      {isLoadingData ? (
+        <View className="flex-1 items-center justify-center">
+          <ActivityIndicator size="large" color="#10b981" />
+          <Text className="text-gray-600 mt-4">Carregando dados...</Text>
         </View>
+      ) : (
+        <ScrollView className="flex-1 px-6 pt-6">
+          <StorageWarning />
 
-        <View className="h-6" />
-      </ScrollView>
+          <TransactionTypeSelector
+            selectedType={formData.type}
+            onTypeSelect={(type) => updateField("type", type)}
+            disabled={isLoading}
+          />
+
+          <FormInput
+            label="Destinatário"
+            value={formData.receiver_name}
+            onChangeText={(value) => updateField("receiver_name", value)}
+            placeholder="Ex: Mercado, Empresa, Pessoa..."
+            disabled={isLoading}
+          />
+
+          <FormInput
+            label="Valor"
+            value={formData.amount}
+            onChangeText={(value) =>
+              updateField("amount", value.replace(",", "."))
+            }
+            placeholder="0,00"
+            keyboardType="decimal-pad"
+            prefix="R$"
+            disabled={isLoading}
+          />
+
+          <FormInput
+            label="Data"
+            value={formData.date}
+            onChangeText={(value) => updateField("date", value)}
+            placeholder="YYYY-MM-DD"
+            helpText="Formato: AAAA-MM-DD (use o teclado para editar)"
+            disabled={isLoading}
+          />
+
+          <ImageUploader
+            image={receiptImage}
+            onImageSelect={setReceiptImage}
+            disabled={isLoading}
+          />
+
+          <View className="mt-4">
+            <SubmitButton
+              onPress={handleUpdateTransaction}
+              isLoading={isLoading}
+              title="Atualizar Transação"
+            />
+          </View>
+
+          <View className="h-6" />
+        </ScrollView>
+      )}
     </View>
   );
 }

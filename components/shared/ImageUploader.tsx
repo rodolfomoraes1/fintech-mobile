@@ -18,6 +18,7 @@ export function ImageUploader({
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
 
     if (status !== "granted") {
+      console.warn("Permissão de galeria negada");
       Alert.alert(
         "Permissão necessária",
         "Precisamos de acesso à sua galeria."

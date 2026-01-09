@@ -1,6 +1,33 @@
-import React, { createContext, useContext, useEffect, useState } from "react";
-import { authService } from "../services/authService";
-import { AuthContextType, User } from "../types";
+import React, {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
+import { User } from "../domain/entities/User";
+import {
+  getCurrentUserUseCase,
+  signInUseCase,
+  signOutUseCase,
+  signUpUseCase,
+} from "../infrastructure/di/container";
+
+export interface AuthContextType {
+  user: User | null;
+  isLoading: boolean;
+  signIn: (
+    email: string,
+    password: string
+  ) => Promise<{ error: string | null }>;
+  signUp: (
+    name: string,
+    email: string,
+    password: string
+  ) => Promise<{ error: string | null }>;
+  signOut: (router?: any) => Promise<{ error: string | null }>;
+}
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -12,24 +39,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     checkCurrentUser();
   }, []);
 
-  const checkCurrentUser = async () => {
+  const checkCurrentUser = useCallback(async () => {
     try {
-      const currentUser = await authService.getCurrentUser();
+      const currentUser = await getCurrentUserUseCase.execute();
       setUser(currentUser);
     } catch (error) {
       setUser(null);
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
 
-  const signIn = async (email: string, password: string) => {
+  const signIn = useCallback(async (email: string, password: string) => {
     setIsLoading(true);
     try {
-      const result = await authService.signIn(email, password);
+      const result = await signInUseCase.execute({ email, password });
 
-      if (result.user && !result.error) {
-        setUser(result.user);
+      if (result.data && result.success) {
+        setUser(result.data);
       }
 
       return { error: result.error };
@@ -38,31 +65,34 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
 
-  const signUp = async (name: string, email: string, password: string) => {
-    setIsLoading(true);
-    try {
-      const result = await authService.signUp(name, email, password);
+  const signUp = useCallback(
+    async (name: string, email: string, password: string) => {
+      setIsLoading(true);
+      try {
+        const result = await signUpUseCase.execute({ name, email, password });
 
-      if (result.user && !result.error) {
-        setUser(result.user);
+        if (result.data && result.success) {
+          setUser(result.data);
+        }
+
+        return { error: result.error };
+      } catch (error: any) {
+        return { error: error.message };
+      } finally {
+        setIsLoading(false);
       }
+    },
+    []
+  );
 
-      return { error: result.error };
-    } catch (error: any) {
-      return { error: error.message };
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const signOut = async (router?: any) => {
+  const signOut = useCallback(async (router?: any) => {
     setIsLoading(true);
     try {
-      const result = await authService.signOut();
+      const result = await signOutUseCase.execute();
 
-      if (!result.error) {
+      if (result.success) {
         setUser(null);
 
         if (router) {
@@ -76,21 +106,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
 
-  return (
-    <AuthContext.Provider
-      value={{
-        user,
-        isLoading,
-        signIn,
-        signUp,
-        signOut,
-      }}
-    >
-      {children}
-    </AuthContext.Provider>
+  const value = useMemo(
+    () => ({
+      user,
+      isLoading,
+      signIn,
+      signUp,
+      signOut,
+    }),
+    [user, isLoading, signIn, signUp, signOut]
   );
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
 export function useAuth() {
@@ -100,3 +129,14 @@ export function useAuth() {
   }
   return context;
 }
+
+// Seletores para acesso granular
+export const useCurrentUser = () => {
+  const { user } = useAuth();
+  return user;
+};
+
+export const useAuthLoading = () => {
+  const { isLoading } = useAuth();
+  return isLoading;
+};

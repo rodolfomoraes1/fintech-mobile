@@ -9,6 +9,7 @@ export function WebActions() {
   const { signOut } = useAuth();
 
   const handleLogout = () => {
+    console.log("Solicitação de logout (web)");
     Alert.alert("Sair", "Deseja realmente sair da sua conta?", [
       { text: "Cancelar", style: "cancel" },
       {

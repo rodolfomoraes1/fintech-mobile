@@ -4,8 +4,8 @@ import { ScreenHeader } from "@/components/shared/ScreenHeader";
 import { StorageWarning } from "@/components/shared/StorageWarning";
 import { SubmitButton } from "@/components/shared/SubmitButton";
 import { TransactionTypeSelector } from "@/components/shared/TransactionTypeSelector";
-import { useRouter } from "expo-router";
-import React, { useEffect, useState } from "react";
+import { useFocusEffect, useRouter } from "expo-router";
+import React, { useCallback, useState } from "react";
 import { Alert, ScrollView, View } from "react-native";
 import { useAuth } from "../../contexts/AuthContext";
 import { useInvoices } from "../../hooks/useInvoices";
@@ -24,15 +24,19 @@ export default function CreateTransactionScreen() {
     type: "deposito" as InvoiceType,
   });
 
-  useEffect(() => {
-    setFormData({
-      receiver_name: "",
-      amount: "",
-      date: new Date().toISOString().split("T")[0],
-      type: "deposito",
-    });
-    setReceiptImage(null);
-  }, []);
+  // Limpar dados sempre que a tela entrar em foco
+  useFocusEffect(
+    useCallback(() => {
+      setFormData({
+        receiver_name: "",
+        amount: "",
+        date: new Date().toISOString().split("T")[0],
+        type: "deposito",
+      });
+      setReceiptImage(null);
+      setIsLoading(false);
+    }, [])
+  );
 
   const updateField = (
     field: keyof typeof formData,
@@ -66,21 +70,19 @@ export default function CreateTransactionScreen() {
     try {
       setIsLoading(true);
 
-      const now = new Date().toISOString();
       const transactionData = {
-        receiver_name: formData.receiver_name.trim(),
+        receiverName: formData.receiver_name.trim(),
         amount: parseFloat(formData.amount),
         date: formData.date,
         type: formData.type,
-        user_id: user.id,
-        receipt_url: "",
-        created_at: now,
-        updated_at: now,
+        userId: user.id,
+        receiptUrl: "",
       };
 
       const result = await addInvoice(transactionData);
 
       if (result.success) {
+        console.log("Transação criada com sucesso");
         Alert.alert("Sucesso", "Transação criada com sucesso!", [
           {
             text: "OK",
@@ -92,13 +94,45 @@ export default function CreateTransactionScreen() {
           },
         ]);
       } else {
-        Alert.alert(
-          "Erro",
-          result.error || "Não foi possível criar a transação"
-        );
+        if (
+          result.error?.includes("permission") ||
+          result.error?.includes("Missing or insufficient permissions")
+        ) {
+          Alert.alert(
+            "Sessão Expirada",
+            "Sua sessão expirou. Por favor, faça login novamente.",
+            [
+              {
+                text: "OK",
+                onPress: () => router.replace("/login"),
+              },
+            ]
+          );
+        } else {
+          Alert.alert(
+            "Erro",
+            result.error || "Não foi possível criar a transação"
+          );
+        }
       }
     } catch (error: any) {
-      Alert.alert("Erro", error.message || "Ocorreu um erro inesperado");
+      if (
+        error.message?.includes("permission") ||
+        error.message?.includes("Missing or insufficient permissions")
+      ) {
+        Alert.alert(
+          "Sessão Expirada",
+          "Sua sessão expirou. Por favor, faça login novamente.",
+          [
+            {
+              text: "OK",
+              onPress: () => router.replace("/login"),
+            },
+          ]
+        );
+      } else {
+        Alert.alert("Erro", error.message || "Ocorreu um erro inesperado");
+      }
     } finally {
       setIsLoading(false);
     }

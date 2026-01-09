@@ -1,9 +1,27 @@
-import { Tabs } from "expo-router";
-import React from "react";
-
 import { Ionicons } from "@expo/vector-icons";
+import { Tabs, useRouter } from "expo-router";
+import React, { useEffect } from "react";
+import { useAuth } from "../../contexts/AuthContext";
 
 export default function TabLayout() {
+  const { user, isLoading } = useAuth();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!isLoading && !user) {
+      console.warn("Usuário não autenticado - redirecionando para login");
+      router.replace("/login");
+    }
+  }, [user, isLoading, router]);
+
+  if (isLoading) {
+    return null;
+  }
+
+  if (!user) {
+    return null;
+  }
+
   return (
     <Tabs
       screenOptions={{

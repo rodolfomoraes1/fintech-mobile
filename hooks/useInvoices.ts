@@ -1,7 +1,36 @@
 import { useEffect, useState } from "react";
-import { balanceService } from "../services/balanceService";
-import { invoiceService } from "../services/invoiceService";
-import { CreateInvoiceData, InvoiceType, PersonalInvoice } from "../types";
+import { Invoice, InvoiceType } from "../domain/entities/Invoice";
+import {
+  createInvoiceUseCase,
+  deleteInvoiceUseCase,
+  getInvoiceByIdUseCase,
+  getUserInvoicesUseCase,
+  updateBalanceWithTransactionUseCase,
+  updateInvoiceUseCase,
+} from "../infrastructure/di/container";
+import { PersonalInvoice } from "../types";
+
+interface CreateInvoiceData {
+  receiverName: string;
+  amount: number;
+  date: string;
+  type: InvoiceType;
+  userId: string;
+  receiptUrl?: string;
+}
+
+// Converte Invoice (camelCase) para PersonalInvoice (snake_case)
+const convertToPersonalInvoice = (invoice: Invoice): PersonalInvoice => ({
+  id: invoice.id,
+  receiver_name: invoice.receiverName,
+  amount: invoice.amount,
+  date: invoice.date,
+  type: invoice.type,
+  user_id: invoice.userId,
+  receipt_url: invoice.receiptUrl,
+  created_at: invoice.createdAt,
+  updated_at: invoice.updatedAt,
+});
 
 export const useInvoices = (userId: string | null) => {
   const [invoices, setInvoices] = useState<PersonalInvoice[]>([]);
@@ -19,13 +48,16 @@ export const useInvoices = (userId: string | null) => {
         setIsLoading(true);
         setError(null);
 
-        const result = await invoiceService.getUserInvoices(userId);
+        const result = await getUserInvoicesUseCase.execute(userId);
 
         if (result.error) {
           throw new Error(result.error);
         }
 
-        setInvoices(result.data || []);
+        const personalInvoices = (result.data || []).map(
+          convertToPersonalInvoice
+        );
+        setInvoices(personalInvoices);
       } catch (err: any) {
         setError(err.message);
         setInvoices([]);
@@ -41,21 +73,21 @@ export const useInvoices = (userId: string | null) => {
     invoice: CreateInvoiceData
   ): Promise<{ success: boolean; error?: string }> => {
     try {
-      const now = new Date().toISOString();
-      const invoiceWithTimestamps = {
-        ...invoice,
-        created_at: invoice.created_at || now,
-        updated_at: invoice.updated_at || now,
-      };
-
-      const result = await invoiceService.createInvoice(invoiceWithTimestamps);
+      const result = await createInvoiceUseCase.execute({
+        receiverName: invoice.receiverName,
+        amount: invoice.amount,
+        date: invoice.date,
+        type: invoice.type,
+        userId: invoice.userId,
+        receiptUrl: invoice.receiptUrl,
+      });
 
       if (result.error) {
         return { success: false, error: result.error };
       }
 
       if (userId && result.data) {
-        await balanceService.updateBalanceWithTransaction(
+        await updateBalanceWithTransactionUseCase.execute(
           userId,
           result.data.amount,
           result.data.type
@@ -63,6 +95,7 @@ export const useInvoices = (userId: string | null) => {
       }
 
       if (result.data) {
+        convertToPersonalInvoice(result.data!);
         setInvoices((prev) => [result.data!, ...prev]);
       }
 
@@ -76,9 +109,10 @@ export const useInvoices = (userId: string | null) => {
     if (!userId) return;
 
     try {
-      const result = await invoiceService.getUserInvoices(userId);
+      const result = await getUserInvoicesUseCase.execute(userId);
       if (!result.error && result.data) {
-        setInvoices(result.data);
+        const personalInvoices = result.data.map(convertToPersonalInvoice);
+        setInvoices(personalInvoices);
       }
     } catch (err: any) {
       //Alert.alert("Erro", "Não foi possível atualizar as transações");
@@ -100,7 +134,7 @@ export const useInvoices = (userId: string | null) => {
         ? (type as InvoiceType)
         : "pagamento";
 
-      const result = await invoiceService.deleteInvoice(invoiceId);
+      const result = await deleteInvoiceUseCase.execute(userId!, invoiceId);
 
       if (result.error) {
         return { success: false, error: result.error };
@@ -108,13 +142,13 @@ export const useInvoices = (userId: string | null) => {
 
       if (userId) {
         if (invoiceType === "deposito") {
-          await balanceService.updateBalanceWithTransaction(
+          await updateBalanceWithTransactionUseCase.execute(
             userId,
             -amount,
             invoiceType
           );
         } else {
-          await balanceService.updateBalanceWithTransaction(
+          await updateBalanceWithTransactionUseCase.execute(
             userId,
             amount,
             invoiceType
@@ -129,11 +163,74 @@ export const useInvoices = (userId: string | null) => {
     }
   };
 
+  const getInvoiceById = async (
+    invoiceId: string
+  ): Promise<{ data: PersonalInvoice | null; error: string | null }> => {
+    if (!userId) return { data: null, error: "Usuário não autenticado" };
+
+    try {
+      // Busca direto do repositório para garantir dados atualizados
+      const result = await getInvoiceByIdUseCase.execute(userId, invoiceId);
+      if (result.error) {
+        return { data: null, error: result.error };
+      }
+
+      if (!result.data) {
+        return { data: null, error: "Transação não encontrada" };
+      }
+
+      return { data: convertToPersonalInvoice(result.data), error: null };
+    } catch (err: any) {
+      return { data: null, error: err.message };
+    }
+  };
+
+  const updateInvoice = async (
+    invoiceId: string,
+    updates: {
+      receiverName?: string;
+      amount?: number;
+      date?: string;
+      type?: InvoiceType;
+      receiptUrl?: string;
+    }
+  ): Promise<{ success: boolean; error?: string }> => {
+    if (!userId) return { success: false, error: "Usuário não autenticado" };
+
+    try {
+      const result = await updateInvoiceUseCase.execute({
+        id: invoiceId,
+        ...updates,
+      });
+
+      if (result.error) {
+        return { success: false, error: result.error };
+      }
+
+      // Atualizar a lista local
+      if (result.data) {
+        setInvoices((prev) =>
+          prev.map((invoice) =>
+            invoice.id === invoiceId
+              ? convertToPersonalInvoice(result.data!)
+              : invoice
+          )
+        );
+      }
+
+      return { success: true };
+    } catch (err: any) {
+      return { success: false, error: err.message };
+    }
+  };
+
   return {
     invoices,
     isLoading,
     error,
     addInvoice,
+    updateInvoice,
+    getInvoiceById,
     refreshInvoices,
     deleteInvoice,
   };

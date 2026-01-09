@@ -19,6 +19,7 @@ export const UserAvatar: React.FC<UserAvatarProps> = ({ user }) => {
 
   const handleLogout = async () => {
     setIsMenuOpen(false);
+    console.log("Solicitação de logout");
     Alert.alert("Sair", "Deseja realmente sair da sua conta?", [
       { text: "Cancelar", style: "cancel" },
       {
@@ -46,6 +47,7 @@ export const UserAvatar: React.FC<UserAvatarProps> = ({ user }) => {
         className="flex-row items-center px-4 py-3 hover:bg-gray-50 active:bg-gray-100"
         onPress={() => {
           setIsMenuOpen(false);
+          console.log("Acesso ao perfil - em desenvolvimento");
           Alert.alert("Perfil", "Funcionalidade em desenvolvimento");
         }}
       >
@@ -57,6 +59,7 @@ export const UserAvatar: React.FC<UserAvatarProps> = ({ user }) => {
         className="flex-row items-center px-4 py-3 hover:bg-gray-50 active:bg-gray-100"
         onPress={() => {
           setIsMenuOpen(false);
+          console.log("Acesso às configurações - em desenvolvimento");
           Alert.alert("Configurações", "Funcionalidade em desenvolvimento");
         }}
       >

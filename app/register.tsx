@@ -13,7 +13,7 @@ import {
   View,
 } from "react-native";
 import { useAuth } from "../contexts/AuthContext";
-import { authService } from "../services/authService";
+import { InputValidator } from "../infrastructure/security/InputValidator";
 
 export default function RegisterScreen() {
   const [formData, setFormData] = useState({
@@ -34,20 +34,16 @@ export default function RegisterScreen() {
 
   const validations = {
     name: () => {
-      if (!formData.name.trim()) return "Por favor, digite seu nome completo";
-      return null;
+      const result = InputValidator.validateName(formData.name);
+      return result.valid ? null : result.error;
     },
     email: () => {
-      if (!formData.email.trim()) return "Por favor, digite seu e-mail";
-      if (!authService.isValidEmail(formData.email))
-        return "Por favor, digite um e-mail válido";
-      return null;
+      const result = InputValidator.validateEmail(formData.email);
+      return result.valid ? null : result.error;
     },
     password: () => {
-      if (!formData.password.trim()) return "Por favor, digite sua senha";
-      if (!authService.isValidPassword(formData.password))
-        return "A senha deve ter pelo menos 6 caracteres";
-      return null;
+      const result = InputValidator.validatePassword(formData.password);
+      return result.valid ? null : result.error;
     },
     confirmPassword: () => {
       if (formData.password !== formData.confirmPassword)
@@ -79,7 +75,7 @@ export default function RegisterScreen() {
       );
 
       if (error) {
-        Alert.alert("Erro", "Contacte o suporte.");
+        Alert.alert("Erro", error);
       }
     } catch (error) {
       Alert.alert("Erro", "Ocorreu um erro inesperado. Tente novamente.");
