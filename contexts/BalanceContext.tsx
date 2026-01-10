@@ -51,7 +51,6 @@ export function useBalanceContext() {
   return context;
 }
 
-// Seletores para acesso granular
 export const useCurrentBalance = () => {
   const { currentBalance } = useBalanceContext();
   return currentBalance;

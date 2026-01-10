@@ -130,7 +130,6 @@ export function useAuth() {
   return context;
 }
 
-// Seletores para acesso granular
 export const useCurrentUser = () => {
   const { user } = useAuth();
   return user;

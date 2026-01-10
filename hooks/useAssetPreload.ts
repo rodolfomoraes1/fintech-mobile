@@ -7,14 +7,12 @@ export function useAssetPreload() {
   useEffect(() => {
     async function loadResourcesAndDataAsync() {
       try {
-        // Pré-carregar fontes se necessário
+        // no-op
         await Font.loadAsync({
-          // Adicione fontes customizadas aqui se houver
+          // no-op
         });
 
-        // Pré-carregar assets críticos
         const cacheImages = [];
-        // Adicione imagens críticas aqui se necessário
 
         await Promise.all([...cacheImages]);
       } catch (e) {

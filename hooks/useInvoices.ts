@@ -169,7 +169,6 @@ export const useInvoices = (userId: string | null) => {
     if (!userId) return { data: null, error: "Usuário não autenticado" };
 
     try {
-      // Busca direto do repositório para garantir dados atualizados
       const result = await getInvoiceByIdUseCase.execute(userId, invoiceId);
       if (result.error) {
         return { data: null, error: result.error };
@@ -207,7 +206,6 @@ export const useInvoices = (userId: string | null) => {
         return { success: false, error: result.error };
       }
 
-      // Atualizar a lista local
       if (result.data) {
         setInvoices((prev) =>
           prev.map((invoice) =>

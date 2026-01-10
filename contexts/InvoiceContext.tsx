@@ -1,6 +1,7 @@
 import React, { createContext, useCallback, useContext, useMemo } from "react";
-import { Invoice, InvoiceType } from "../domain/entities/Invoice";
+import { InvoiceType } from "../domain/entities/Invoice";
 import { useInvoices } from "../hooks/useInvoices";
+import { PersonalInvoice } from "../types";
 
 interface CreateInvoiceData {
   receiverName: string;
@@ -12,7 +13,7 @@ interface CreateInvoiceData {
 }
 
 interface InvoiceContextType {
-  invoices: Invoice[];
+  invoices: PersonalInvoice[];
   isLoading: boolean;
   error: string | null;
   addInvoice: (
@@ -87,7 +88,6 @@ export function useInvoiceContext() {
   return context;
 }
 
-// Seletores para acesso granular
 export const useInvoicesList = () => {
   const { invoices } = useInvoiceContext();
   return invoices;

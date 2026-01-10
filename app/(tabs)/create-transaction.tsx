@@ -24,7 +24,6 @@ export default function CreateTransactionScreen() {
     type: "deposito" as InvoiceType,
   });
 
-  // Limpar dados sempre que a tela entrar em foco
   useFocusEffect(
     useCallback(() => {
       setFormData({
